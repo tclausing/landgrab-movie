@@ -7,18 +7,18 @@
   chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       if (request.run) {
-        LandGrabMovie([], request.options);
+        LandGrabMovie({uris: []}, request.options);
       }
     });
 
   var storage = chrome.storage.local;
-  storage.get(['uris', 'options'], function(items) {
-    if (items.uris) {
-      LandGrabMovie(items.uris, items.options);
+  storage.get(['state', 'options'], function(items) {
+    if (items.state) {
+      LandGrabMovie(items.state, items.options);
     }
   });
 
-  function LandGrabMovie(uris, options) {
+  function LandGrabMovie(state, options) {
     console.info('script.js');
     var el = document.getElementById('imgdiv');
 
@@ -39,16 +39,24 @@
         var out = {};
         encoder.WebPEncodeRGBA(pixels, width, height, width * 4, options.quality, out);
         var b64 = btoa(out.output);
-        uris.push('data:image/webp;base64,' + b64);
+        state.uris.push('data:image/webp;base64,' + b64);
 
         var btn = document.querySelector('#forward_one_btn');
         if (btn.getAttribute('btn_disabled') === 'true') {
-          // debugger;
-          storage.remove('uris');
-          createVideo(uris, width, height, options);
+          if (state.last) {
+            storage.remove('state');
+            createVideo(state.uris, width, height, options);
+          } else {
+            state.last = true;
+            storage.set({
+              state: state
+            }, function() {
+              document.querySelector('[href="HistoryPlayback"]').click();
+            });
+          }
         } else {
           storage.set({
-            uris: uris
+            state: state
           }, function() {
             btn.click();
           });
