@@ -7,7 +7,9 @@
   chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       if (request.run) {
-        LandGrabMovie({uris: []}, request.options);
+        LandGrabMovie({
+          uris: []
+        }, request.options);
       }
     });
 
@@ -20,50 +22,72 @@
 
   function LandGrabMovie(state, options) {
     console.info('script.js');
+
     var el = document.getElementById('imgdiv');
+    doSteps(state, options, el, function() {
 
-    // domtoimage.toJpeg(el, {
-    //     quality: 0.95
-    //   })
-    domtoimage.toPixelData(el)
-      .then(function(pixels) {
-
-        var width = el.offsetWidth,
-          height = el.offsetHeight;
-
-        var encoder = new WebPEncoder();
-        // http://libwebpjs.appspot.com/v0.1.3/
-        encoder.WebPEncodeConfig({
-          method: options.method
+      var btn = document.querySelector('#forward_one_btn');
+      if (isBtnDisabled(btn)) {
+        storage.remove('state');
+        createVideo(state.uris, el.offsetWidth, el.offsetHeight, options);
+      } else {
+        storage.set({
+          state: state
+        }, function() {
+          btn.click();
         });
-        var out = {};
-        encoder.WebPEncodeRGBA(pixels, width, height, width * 4, options.quality, out);
-        var b64 = btoa(out.output);
-        state.uris.push('data:image/webp;base64,' + b64);
-
-        var btn = document.querySelector('#forward_one_btn');
-        if (btn.getAttribute('btn_disabled') === 'true') {
-          if (state.last) {
-            storage.remove('state');
-            createVideo(state.uris, width, height, options);
-          } else {
-            state.last = true;
-            storage.set({
-              state: state
-            }, function() {
-              document.querySelector('[href="HistoryPlayback"]').click();
-            });
-          }
-        } else {
-          storage.set({
-            state: state
-          }, function() {
-            btn.click();
-          });
-        }
-      });
+      }
+    });
   }
 
+  function isBtnDisabled(btn) {
+    return btn.getAttribute('btn_disabled') === 'true';
+  }
+
+  function doSteps(state, options, el, next) {
+
+    var btn = document.querySelector('#action_continue');
+
+    // http://libwebpjs.appspot.com/v0.1.3/
+    var encoder = new WebPEncoder();
+    encoder.WebPEncodeConfig({
+      method: options.method
+    });
+
+    function nextStep() {
+      if (isBtnDisabled(btn)) {
+        next();
+      } else {
+        btn.click();
+        setTimeout(step, 20);
+      }
+    }
+
+    function step() {
+      var action = document.querySelector('#history_action_div').innerHTML;
+      if (action.indexOf('Conquered territory') != -1) {
+        // domtoimage.toJpeg(el, {
+        //     quality: 0.95
+        //   })
+        domtoimage.toPixelData(el)
+          .then(function(pixels) {
+
+            var width = el.offsetWidth,
+              height = el.offsetHeight;
+
+            var out = {};
+            encoder.WebPEncodeRGBA(pixels, width, height, width * 4, options.quality, out);
+            var b64 = btoa(out.output);
+            state.uris.push('data:image/webp;base64,' + b64);
+            nextStep();
+          });
+      } else {
+        nextStep();
+      }
+    }
+
+    step();
+  }
 
   function createVideo(uris, width, height, options) {
     /* adapted from http://techslides.com/demos/image-video/create.html */
@@ -73,13 +97,17 @@
     canvas.height = height;
     var context = canvas.getContext("2d");
     // https://github.com/antimatter15/whammy
-    var video = new Whammy.Video(options.framerate);
+    var video = new Whammy.Video();
+    var duration = 1000.0 / options.framerate;
 
     function next() {
       if (uris.length) {
         // process(uris.shift(), canvas, context, video, next);
         // debugger;
-        video.add(uris.shift());
+        video.add(uris.shift(), duration);
+        if (uris.length === 1) {
+          video.add(uris.shift(), 20000);
+        }
         next();
       } else {
         finalizeVideo(video);
