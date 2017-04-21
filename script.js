@@ -44,19 +44,42 @@
     return btn.getAttribute('btn_disabled') === 'true';
   }
 
+  function Pool(size, onmessage) {
+    this.workers = [];
+    while(size --) {
+      var worker = new Worker(chrome.runtime.getURL('worker.js'));
+      this.workers.push(worker);
+      worker.onmessage = onmessage;
+    }
+    this.i = 0;
+  }
+
+  Pool.prototype.postMessage = function(data) {
+    if (++this.i == this.workers.length) this.i = 0;
+    this.workers[this.i].postMessage(data);
+  };
+
   function doSteps(state, options, el, next) {
 
     var btn = document.querySelector('#action_continue');
 
-    // http://libwebpjs.appspot.com/v0.1.3/
-    var encoder = new WebPEncoder();
-    encoder.WebPEncodeConfig({
-      method: options.method
+    var count = 0, ind = 0, mainThreadDone = false;
+    var pool = new Pool(3, function(e) {
+      // console.log('Message from worker: ' + event.data);
+      state.uris[e.data.ind] = e.data.uri;
+      count--;
+      console.info('Receive: ' + count);
+      if (!count && mainThreadDone) {
+        next();
+      }
     });
 
     function nextStep() {
       if (isBtnDisabled(btn)) {
-        next();
+        mainThreadDone = true;
+        if (!count) {
+          next();
+        }
       } else {
         btn.click();
         setTimeout(step, 20);
@@ -72,13 +95,17 @@
         domtoimage.toPixelData(el)
           .then(function(pixels) {
 
-            var width = el.offsetWidth,
-              height = el.offsetHeight;
+            console.info('Send: ' + count);
+            pool.postMessage({
+              ind: ind,
+              options: options,
+              pixels: pixels,
+              width: el.offsetWidth,
+              height: el.offsetHeight
+            });
+            count++;
+            ind++;
 
-            var out = {};
-            encoder.WebPEncodeRGBA(pixels, width, height, width * 4, options.quality, out);
-            var b64 = btoa(out.output);
-            state.uris.push('data:image/webp;base64,' + b64);
             nextStep();
           });
       } else {
