@@ -1,0 +1,17 @@
+{
+  "name": "LandGrab Movie",
+  "description": "Makes a movie out of the playback history.",
+  "version": "1.0",
+  "permissions": [
+    "storage",
+    "unlimitedStorage"
+  ],
+  "content_scripts": [{
+    "matches": [
+      "*://landgrab.net/landgrab/HistoryPlayback"
+    ],
+    "css": [],
+    "js": ["dom-to-image.min.js", "libwebp-0.1.3.min.js", "whammy.js", "script.js"]
+  }],
+  "manifest_version": 2
+}
