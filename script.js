@@ -7,18 +7,18 @@
   chrome.runtime.onMessage.addListener(
     function(request, sender, sendResponse) {
       if (request.run) {
-        LandGrabMovie([]);
+        LandGrabMovie([], request.options);
       }
     });
 
   var storage = chrome.storage.local;
-  storage.get('uris', function(items) {
+  storage.get(['uris', 'options'], function(items) {
     if (items.uris) {
-      LandGrabMovie(items.uris);
+      LandGrabMovie(items.uris, items.options);
     }
   });
 
-  function LandGrabMovie(uris) {
+  function LandGrabMovie(uris, options) {
     console.info('script.js');
     var el = document.getElementById('imgdiv');
 
@@ -34,18 +34,18 @@
         var encoder = new WebPEncoder();
         // http://libwebpjs.appspot.com/v0.1.3/
         encoder.WebPEncodeConfig({
-          method: 1
+          method: options.method
         });
         var out = {};
-        encoder.WebPEncodeRGBA(pixels, width, height, width * 4, 80, out);
+        encoder.WebPEncodeRGBA(pixels, width, height, width * 4, options.quality, out);
         var b64 = btoa(out.output);
         uris.push('data:image/webp;base64,' + b64);
 
         var btn = document.querySelector('#forward_one_btn');
         if (btn.getAttribute('btn_disabled') === 'true') {
           // debugger;
-          storage.clear();
-          createVideo(uris, width, height);
+          storage.remove('uris');
+          createVideo(uris, width, height, options);
         } else {
           storage.set({
             uris: uris
@@ -57,7 +57,7 @@
   }
 
 
-  function createVideo(uris, width, height) {
+  function createVideo(uris, width, height, options) {
     /* adapted from http://techslides.com/demos/image-video/create.html */
 
     var canvas = document.createElement('canvas');
@@ -65,7 +65,7 @@
     canvas.height = height;
     var context = canvas.getContext("2d");
     // https://github.com/antimatter15/whammy
-    var video = new Whammy.Video(5);
+    var video = new Whammy.Video(options.framerate);
 
     function next() {
       if (uris.length) {

@@ -2,10 +2,19 @@
 <html>
 <head>
   <title>popup</title>
-  <script src="popup.js"></script>
 </head>
 
-<body>Creating movie...
+<body>
+  <p> Go the turn you want to start recording at, then click Record. All turns from that point on will be recorded. </p>
+
+  <h2>Options</h2>
+  <label>Quality (slower): <input type="number" id="method" value="1"></input></label>
+  <label>Quality (bigger file): <input type="number" id="quality" value="80"></input></label>
+  <label>Framerate: <input type="number" id="framerate" value="2"></input></label>
+
+  <button id="record">Record</button>
+
+  <script src="popup.js"></script>
 </body>
 
 </html>
