@@ -3,9 +3,15 @@
   "description": "Makes a movie out of the playback history.",
   "version": "1.0",
   "permissions": [
+    "activeTab", "tabs",
     "storage",
     "unlimitedStorage"
   ],
+  "background": { "scripts": ["background.js"] },
+	"page_action": {
+		"default_title": "LandGrab Movie",
+		"default_popup": "popup.html"
+	},
   "content_scripts": [{
     "matches": [
       "*://landgrab.net/landgrab/HistoryPlayback"

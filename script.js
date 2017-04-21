@@ -1,11 +1,25 @@
 (function() {
 
-  var storage = chrome.storage.local;
-  storage.get('uris', function(items) {
-    captureScreenshots(items.uris || []);
+  chrome.runtime.sendMessage({
+    active: true
   });
 
-  function captureScreenshots(uris) {
+  chrome.runtime.onMessage.addListener(
+    function(request, sender, sendResponse) {
+      if (request.run) {
+        LandGrabMovie([]);
+      }
+    });
+
+  var storage = chrome.storage.local;
+  storage.get('uris', function(items) {
+    if (items.uris) {
+      LandGrabMovie(items.uris);
+    }
+  });
+
+  function LandGrabMovie(uris) {
+    console.info('script.js');
     var el = document.getElementById('imgdiv');
 
     // domtoimage.toJpeg(el, {
@@ -14,15 +28,16 @@
     domtoimage.toPixelData(el)
       .then(function(pixels) {
 
-        var width = el.offsetWidth, height = el.offsetHeight;
+        var width = el.offsetWidth,
+          height = el.offsetHeight;
 
         var encoder = new WebPEncoder();
         // http://libwebpjs.appspot.com/v0.1.3/
         encoder.WebPEncodeConfig({
-          method: 3
+          method: 1
         });
         var out = {};
-        encoder.WebPEncodeRGBA(pixels, width, height, width*4, 80, out);
+        encoder.WebPEncodeRGBA(pixels, width, height, width * 4, 80, out);
         var b64 = btoa(out.output);
         uris.push('data:image/webp;base64,' + b64);
 
@@ -132,7 +147,7 @@
       link.download = 'landgrab.webm';
       link.href = url;
       link.click();
-// debugger;
+      // debugger;
       var div = document.createElement('div');
       div.innerHTML = '<video controls autoplay loop></video>';
       var videoEl = div.childNodes[0];
