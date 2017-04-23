@@ -63,10 +63,9 @@
 
     var btn = document.querySelector('#action_continue');
 
-    var count = 0, ind = 0, mainThreadDone = false;
-    var pool = new Pool(3, function(e) {
-      // console.log('Message from worker: ' + event.data);
-      state.uris[e.data.ind] = e.data.uri;
+    var count = 0, ind = 0, mainThreadDone = false, offset = state.uris.length;
+    var pool = new Pool(navigator.hardwareConcurrency - 1, function(e) {
+      state.uris[offset + e.data.ind] = e.data.uri;
       count--;
       console.info('Receive: ' + count);
       if (!count && mainThreadDone) {
