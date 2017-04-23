@@ -1,7 +1,7 @@
 (function() {
 
   chrome.runtime.sendMessage({
-    active: true
+    fn: 'load'
   });
 
   chrome.runtime.onMessage.addListener(
@@ -19,6 +19,21 @@
       LandGrabMovie(items.state, items.options);
     }
   });
+
+  function Pool(size, onmessage) {
+    this.workers = [];
+    while(size --) {
+      var worker = new Worker(chrome.runtime.getURL('worker.js'));
+      this.workers.push(worker);
+      worker.onmessage = onmessage;
+    }
+    this.i = 0;
+  }
+
+  Pool.prototype.postMessage = function(data) {
+    if (++this.i == this.workers.length) this.i = 0;
+    this.workers[this.i].postMessage(data);
+  };
 
   function LandGrabMovie(state, options) {
     console.info('script.js');
@@ -43,21 +58,6 @@
   function isBtnDisabled(btn) {
     return btn.getAttribute('btn_disabled') === 'true';
   }
-
-  function Pool(size, onmessage) {
-    this.workers = [];
-    while(size --) {
-      var worker = new Worker(chrome.runtime.getURL('worker.js'));
-      this.workers.push(worker);
-      worker.onmessage = onmessage;
-    }
-    this.i = 0;
-  }
-
-  Pool.prototype.postMessage = function(data) {
-    if (++this.i == this.workers.length) this.i = 0;
-    this.workers[this.i].postMessage(data);
-  };
 
   function doSteps(state, options, el, next) {
 

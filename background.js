@@ -1,27 +1,27 @@
-chrome.runtime.onMessage.addListener(
-  function(request, sender, sendResponse) {
-    if (request.active) {
-      chrome.tabs.query({
-        active: true,
-        currentWindow: true
-      }, function(tabs) {
-        load(tabs[0].id);
-      });
-    }
-  });
+chrome.runtime.onMessage.addListener(function(request, sender, sendResponse) {
+  fns[request.fn](request);
+});
 
 // chrome.tabs.onUpdated.addListener(function(tabId, change, tab) {
 //   if (change.status == "complete") {
-//     load(tabId);
+//     fns.terminatePool();
 //   }
 // });
-//
+
 // chrome.tabs.onSelectionChanged.addListener(function(tabId, info) {
 //   load(tabId);
 // });
 
-function load(tabId) {
-  chrome.tabs.sendRequest(tabId, {}, function(address) {
-    chrome.pageAction.show(tabId);
-  });
-}
+var fns = {
+
+  load: function() {
+    chrome.tabs.query({
+      active: true,
+      currentWindow: true
+    }, function(tabs) {
+      chrome.tabs.sendRequest(tabs[0].id, {}, function(address) {
+        chrome.pageAction.show(tabs[0].id);
+      });
+    });
+  },
+};
