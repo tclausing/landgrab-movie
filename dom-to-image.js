@@ -157,6 +157,11 @@
             })
             .then(function (clone) {
                 return processClone(node, clone);
+            })
+            .then(function(clone) {
+                return new Promise(function (resolve) {
+                  setTimeout(function() { resolve(clone); }, 0);
+                });
             });
 
         function makeNodeCopy(node) {
