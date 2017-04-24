@@ -204,7 +204,10 @@
                 copyStyle(window.getComputedStyle(original), clone.style);
 
                 function copyStyle(source, target) {
-                    if (source.cssText) target.cssText = source.cssText;
+                    function getCssText(el) { return el.cssText; }
+                    function setCssText(el, cssText) { el.cssText = cssText; }
+                    var cssText = getCssText(source);
+                    if (cssText) setCssText(target, cssText);
                     else copyProperties(source, target);
 
                     function copyProperties(source, target) {
@@ -301,10 +304,7 @@
 
     function makeSvgDataUri(node, width, height) {
         return Promise.resolve(node)
-            .then(function (node) {
-                node.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
-                return new XMLSerializer().serializeToString(node);
-            })
+            .then(serializeToString)
             .then(util.escapeXhtml)
             .then(function (xhtml) {
                 return '<foreignObject x="0" y="0" width="100%" height="100%">' + xhtml + '</foreignObject>';
@@ -316,6 +316,11 @@
             .then(function (svg) {
                 return 'data:image/svg+xml;charset=utf-8,' + svg;
             });
+
+            function serializeToString (node) {
+                node.setAttribute('xmlns', 'http://www.w3.org/1999/xhtml');
+                return new XMLSerializer().serializeToString(node);
+            }
     }
 
     function newUtil() {
