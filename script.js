@@ -91,21 +91,25 @@
         // domtoimage.toJpeg(el, {
         //     quality: 0.95
         //   })
-        domtoimage.toPixelData(el)
-          .then(function(pixels) {
-
-            console.info('Send: ' + count);
-            pool.postMessage({
-              ind: ind,
-              options: options,
-              pixels: pixels,
-              width: el.offsetWidth,
-              height: el.offsetHeight
-            });
-            count++;
-            ind++;
+        domtoimage.scan(el)
+          .then(function(data) {
+            var thisCount = count++,
+              thisInd = ind++,
+              width = el.offsetWidth,
+              height = el.offsetHeight;
 
             nextStep();
+
+            domtoimage.toPixelData(data).then(function(pixels) {
+              console.info('Send: ' + thisCount);
+              pool.postMessage({
+                ind: thisInd,
+                options: options,
+                pixels: pixels,
+                width: width,
+                height: height
+              });
+            });
           });
       } else {
         nextStep();
